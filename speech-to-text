@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>تحويل الصوت إلى نص</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f2f2f2;
+      text-align: center;
+      direction: rtl;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 10px 15px;
+      margin: 8px;
+      border-radius: 8px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    #output {
+      margin: 20px auto;
+      font-size: 18px;
+      color: #333;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      width: 95%;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      min-height: 100px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #timer {
+      font-size: 18px;
+      color: #d00;
+      margin-right: 10px;
+      display: inline-block;
+    }
+
+    #archive {
+      margin-top: 30px;
+      text-align: right;
+      max-width: 95%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .archive-item {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .archive-title {
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .archive-content {
+      margin-top: 5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      display: none;
+      text-align: right;
+    }
+
+    .delete-btn {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      background: #e74c3c;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎙️ تحويل الصوت إلى نص (عربي)</h2>
+
+  <button onclick="startListening()">▶️ ابدأ التسجيل</button>
+  <button onclick="pauseListening()">⏸️ إيقاف مؤقت</button>
+  <button onclick="resumeListening()">🔁 استئناف</button>
+  <span id="timer">0 ثانية</span>
+  <br />
+  <button onclick="resetText()">🔄 إعادة</button>
+  <button onclick="copyText()">📋 نسخ</button>
+
+  <div id="output">النص سيظهر هنا...</div>
+
+  <h3>📂 الأرشيف المحلي للنصوص المسجلة</h3>
+  <div id="archive"></div>
+
+  <script>
+    const output = document.getElementById("output");
+    const timerSpan = document.getElementById("timer");
+    const archiveDiv = document.getElementById("archive");
+    let timerInterval;
+    let startTime;
+    let fullText = "";
+    let recognition;
+    let isListening = false;
+
+    function updateTimer() {
+      clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        timerSpan.textContent = `${seconds} ثانية`;
+      }, 1000);
+    }
+
+    function startRecognition() {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "ar-SA";
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        isListening = true;
+        updateTimer();
+      };
+
+      recognition.onresult = function(event) {
+        const result = event.results[0][0].transcript;
+        fullText += (fullText ? " " : "") + result;
+        output.innerText = fullText;
+      };
+
+      recognition.onerror = function(event) {
+        output.innerText += "\n❌ خطأ: " + event.error;
+      };
+
+      recognition.onend = () => {
+        clearInterval(timerInterval);
+        isListening = false;
+        if (fullText.trim()) {
+          saveText(fullText.trim());
+          loadArchive();
+        }
+      };
+
+      recognition.start();
+    }
+
+    function startListening() {
+      fullText = "";
+      output.innerText = "... جاري الاستماع";
+      startRecognition();
+    }
+
+    function pauseListening() {
+      if (recognition && isListening) {
+        recognition.stop();
+      }
+    }
+
+    function resumeListening() {
+      if (!isListening) {
+        output.innerText = fullText + "\n... جاري الاستماع";
+        startRecognition();
+      }
+    }
+
+    function resetText() {
+      fullText = "";
+      output.innerText = "النص سيظهر هنا...";
+      timerSpan.textContent = "0 ثانية";
+      clearInterval(timerInterval);
+    }
+
+    function copyText() {
+      navigator.clipboard.writeText(fullText).then(() => {
+        alert("✅ تم نسخ النص!");
+      });
+    }
+
+    // أرشيف محلي باستخدام LocalStorage
+    function saveText(text) {
+      let archive = JSON.parse(localStorage.getItem("speechArchive") || "[]");
+      archive.push(text);
+      localStorage.setItem("speechArchive", JSON.stringify(archive));
+    }
+
+    function loadArchive() {
+      let archive = JSON.parse(localStorage.getItem("speechArchive") || "[]");
+      archiveDiv.innerHTML = "";
+      archive.forEach((text, idx) => {
+        const title = text.split(" ").slice(0, 3).join(" ") || "بدون عنوان";
+        const item = document.createElement("div");
+        item.className = "archive-item";
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "archive-title";
+        titleEl.textContent = title;
+        titleEl.onclick = () => {
+          contentEl.style.display = contentEl.style.display === "none" ? "block" : "none";
+        };
+
+        const contentEl = document.createElement("div");
+        contentEl.className = "archive-content";
+        contentEl.textContent = text;
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.textContent = "حذف";
+        delBtn.onclick = () => {
+          if (confirm("هل تريد حذف هذا النص؟")) {
+            archive.splice(idx, 1);
+            localStorage.setItem("speechArchive", JSON.stringify(archive));
+            loadArchive();
+          }
+        };
+
+        item.appendChild(titleEl);
+        item.appendChild(contentEl);
+        item.appendChild(delBtn);
+
+        archiveDiv.appendChild(item);
+      });
+    }
+
+    // تحميل الأرشيف عند بدء الصفحة
+    loadArchive();
+  </script>
+</body>
+</html>
