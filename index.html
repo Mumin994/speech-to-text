@@ -4,89 +4,14 @@
   <meta charset="UTF-8" />
   <title>تحويل الصوت إلى نص</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f2f2f2;
-      text-align: center;
-      direction: rtl;
-    }
+    <!-- زر الثلاث شخطات -->
+<button class="menu-button" onclick="alert('القائمة لاحقًا')">☰</button>
 
-    button {
-      font-size: 16px;
-      padding: 10px 15px;
-      margin: 8px;
-      border-radius: 8px;
-      border: none;
-      background-color: #4CAF50;
-      color: white;
-      cursor: pointer;
-    }
+<!-- محتوى الموقع -->
+<h2 style="text-align: center; margin-top: 100px;">مرحبًا بك في أداة تحويل الصوت إلى نص</h2>
 
-    #output {
-      margin: 20px auto;
-      font-size: 18px;
-      color: #333;
-      padding: 15px;
-      background: white;
-      border-radius: 10px;
-      width: 95%;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      min-height: 100px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    #timer {
-      font-size: 18px;
-      color: #d00;
-      margin-right: 10px;
-      display: inline-block;
-    }
-
-    #archive {
-      margin-top: 30px;
-      text-align: right;
-      max-width: 95%;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .archive-item {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      padding: 10px 15px;
-      margin-bottom: 10px;
-      position: relative;
-    }
-
-    .archive-title {
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .archive-content {
-      margin-top: 5px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      display: none;
-      text-align: right;
-    }
-
-    .delete-btn {
-      position: absolute;
-      left: 10px;
-      top: 10px;
-      background: #e74c3c;
-      padding: 3px 7px;
-      border-radius: 5px;
-      font-size: 12px;
-    }
-  </style>
-</head>
-<body>
+<!-- زر الميكروفون -->
+<button class="mic-button" onclick="startRecording()">🎤</button>
   <h2>🎙️ تحويل الصوت إلى نص (عربي)</h2>
 
   <button onclick="startListening()">▶️ ابدأ التسجيل</button>
