@@ -7,7 +7,8 @@
       let mediaRecorder;
       let audioChunks = [];
       let timerInterval;
-      let seconds = 0;function startRecording() {
+      let seconds = 0;
+      let isPaused = false;function startRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
@@ -55,7 +56,7 @@
       const li = document.createElement("li");
       li.className = "mb-2";
       li.innerHTML = `<span class='font-semibold'>${archive.length - index}. </span> <span onclick="editText(${index})" class='cursor-pointer hover:underline'>${item.text.slice(0, 20)}...</span><br><button onclick="downloadText(${index})" class='text-sm text-green-500 mr-2'>📥</button><button onclick="deleteText(${index})" class='text-sm text-red-500'>🗑️</button>`;
-      list.appendChild(li);
+      list.insertBefore(li, list.firstChild);
     });
   }
 
@@ -89,6 +90,19 @@
     displayArchive();
   }
 
+  function toggleMenu() {
+    const menu = document.getElementById("sideMenu");
+    menu.classList.toggle("hidden");
+  }
+
+  window.onclick = function (e) {
+    const menu = document.getElementById("sideMenu");
+    const button = document.getElementById("menuButton");
+    if (!menu.contains(e.target) && !button.contains(e.target)) {
+      menu.classList.add("hidden");
+    }
+  };
+
   window.onload = displayArchive;
 </script>
 <script async src="https://static.addtoany.com/menu/page.js"></script>
@@ -97,12 +111,24 @@
   </head>
   <body class="bg-gray-900 text-white p-4">
     <main class="max-w-xl mx-auto">
-      <h1 class="text-2xl font-bold mb-4 text-center">🎤 تحويل الصوت إلى نص</h1>
-      <div class="flex justify-center space-x-4 mb-4">
-        <button onclick="startRecording()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">▶️ ابدأ التسجيل</button>
-        <button onclick="stopRecording()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded">⏹️ إيقاف</button>
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">🎤 تحويل الصوت إلى نص</h1>
+        <button id="menuButton" onclick="toggleMenu()" class="text-3xl">☰</button>
       </div>
-      <div id="timer" class="text-center text-sm text-gray-400 mb-6">المدة: 0 ثانية</div><h2 class="text-xl font-semibold mb-2">📁 الأرشيف</h2>
+      <div id="sideMenu" class="bg-gray-800 p-4 rounded mb-4 hidden">
+        <p class="text-sm text-gray-400">خيارات سريعة:</p>
+        <ul class="text-sm space-y-2 mt-2">
+          <li>🔁 أرشيف من الأسفل للأعلى</li>
+          <li>📝 تعديل نص مباشر</li>
+          <li>📤 مشاركة</li>
+        </ul>
+      </div><div class="flex justify-center space-x-4 mb-4">
+    <button onclick="startRecording()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">▶️ ابدأ التسجيل</button>
+    <button onclick="stopRecording()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded">⏹️ إيقاف</button>
+  </div>
+  <div id="timer" class="text-center text-sm text-gray-400 mb-6">المدة: 0 ثانية</div>
+
+  <h2 class="text-xl font-semibold mb-2">📁 الأرشيف</h2>
   <ul id="archive-list"></ul>
 
   <div class="mt-8 text-center">
