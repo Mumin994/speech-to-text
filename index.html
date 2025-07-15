@@ -2,43 +2,32 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>الأرشيف الصوتي</title>
+  <title>الأرشيف</title>
   <style>
     body {
       direction: rtl;
       font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
       padding: 20px;
     }
-    h2 {
-      text-align: center;
-    }
     .record {
-      background-color: white;
+      border: 1px solid #ccc;
       border-radius: 10px;
-      padding: 15px;
+      padding: 10px;
       margin-bottom: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background-color: #f9f9f9;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-    }
-    .record-number {
-      font-weight: bold;
-      font-size: 18px;
     }
     .record-buttons {
       display: flex;
       gap: 10px;
-      margin-top: 10px;
     }
-    .record-buttons button {
+    button {
+      padding: 5px 10px;
       border: none;
-      padding: 7px 12px;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 14px;
     }
     .whatsapp {
       background-color: #25D366;
@@ -48,55 +37,43 @@
       background-color: #e74c3c;
       color: white;
     }
-    .pdf {
-      background-color: #3498db;
-      color: white;
-    }
-    a {
-      color: #2c3e50;
-      text-decoration: none;
-    }
   </style>
 </head>
 <body>
 
-<h2>📁 أرشيف التسجيلات</h2>
+<h2>الأرشيف</h2>
 <div id="archive"></div>
 
 <script>
-  // ✅ التسجيلات (أضف روابطك الحقيقية هنا)
+  // ✅ قائمة بالتسجيلات – غيّر الروابط حسب الحاجة
   const recordings = [
-    { name: "التسجيل الأول", url: "https://example.com/audio1.mp3" },
-    { name: "التسجيل الثاني", url: "https://example.com/audio2.mp3" },
-    { name: "التسجيل الثالث", url: "https://example.com/audio3.mp3" }
+    { name: "رابط التسجيل 1", url: "https://example.com/audio1.mp3" },
+    { name: "رابط التسجيل 2", url: "https://example.com/audio2.mp3" },
+    { name: "رابط التسجيل 3", url: "https://example.com/audio3.mp3" }
   ];
 
   const archive = document.getElementById("archive");
 
-  // ✅ عرض التسجيلات من القديم (تحت) إلى الجديد (فوق)
+  // ✅ عرض التسجيلات من الأقدم (تحت) إلى الأحدث (فوق)
   recordings.reverse().forEach((record, index) => {
     const number = recordings.length - index;
-
     const item = document.createElement("div");
     item.className = "record";
 
-    const info = document.createElement("div");
-    info.className = "record-number";
-    info.innerHTML = `${number}. <a href="${record.url}" target="_blank">${record.name}</a>`;
+    const label = document.createElement("div");
+    label.innerHTML = `<strong>${number}.</strong> <a href="${record.url}" target="_blank">${record.name}</a>`;
 
     const buttons = document.createElement("div");
     buttons.className = "record-buttons";
 
-    // زر واتساب
     const shareBtn = document.createElement("button");
     shareBtn.className = "whatsapp";
     shareBtn.textContent = "مشاركة واتساب";
     shareBtn.onclick = () => {
-      const msg = encodeURIComponent(`تم تسجيل الصوت: ${record.url}`);
-      window.open(`https://wa.me/?text=${msg}`, "_blank");
+      const message = encodeURIComponent(`تم تسجيل الصوت: ${record.url}`);
+      window.open(`https://wa.me/?text=${message}`, "_blank");
     };
 
-    // زر حذف
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete";
     deleteBtn.textContent = "حذف";
@@ -104,26 +81,11 @@
       item.remove();
     };
 
-    // زر مشاركة PDF
-    const pdfBtn = document.createElement("button");
-    pdfBtn.className = "pdf";
-    pdfBtn.textContent = "PDF";
-    pdfBtn.onclick = () => {
-      const win = window.open('', '', 'width=800,height=600');
-      win.document.write(`<h3>تسجيل رقم ${number}</h3>`);
-      win.document.write(`<p>الرابط: <a href="${record.url}">${record.url}</a></p>`);
-      win.document.close();
-      win.print();
-    };
-
-    // إضافة الأزرار
     buttons.appendChild(shareBtn);
-    buttons.appendChild(pdfBtn);
     buttons.appendChild(deleteBtn);
-
-    item.appendChild(info);
+    item.appendChild(label);
     item.appendChild(buttons);
-    archive.prepend(item); // الأحدث في الأعلى
+    archive.prepend(item); // نضيف الأحدث بالأعلى
   });
 </script>
 
