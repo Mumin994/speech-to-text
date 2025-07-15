@@ -3,7 +3,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تحويل الصوت إلى نص</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">  function shareSite() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent("جرّب موقع تحويل الصوت إلى نص من هنا: ");
+    const shareUrl = `https://wa.me/?text=${text}%20${url}`;
+    window.open(shareUrl, '_blank');
+  }
+</script>
 </head>
 <body class="bg-gray-900 text-white font-sans">
   <!-- شريط علوي -->
@@ -13,9 +19,7 @@
   </header>  <!-- خلفية شفافة عند فتح الشريط الجانبي -->  <div id="backdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black bg-opacity-30 z-40"></div>  <!-- القائمة الجانبية -->  <aside id="sidebar" class="fixed top-0 right-0 w-64 h-full bg-gray-800 shadow-lg transform transition-transform duration-300 translate-x-full z-50">
     <div class="p-4">
       <h2 class="text-lg font-semibold mb-4">📁 الأرشيف</h2>
-      <ul id="archiveList" class="space-y-2 max-h-[80vh] overflow-y-auto">
-        <li class="text-gray-400">لا يوجد محفوظات بعد.</li>
-      </ul>
+      <ul id="archiveList" class="space-y-4 max-h-[80vh] overflow-y-auto text-sm"></ul>
     </div>
   </aside>  <!-- المحتوى الرئيسي -->  <main class="max-w-3xl mx-auto px-4 py-6">
     <div class="mb-6">
@@ -29,7 +33,12 @@
   <button onclick="stopRecording()" class="px-6 py-2 rounded bg-red-700 hover:bg-red-600">⏹️ إيقاف</button>
 </div>
 
-  </main>  <script>
+  <div class="mt-8 text-center">
+  <button onclick="shareSite()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">
+    📲 شارك الموقع على واتساب
+  </button>
+</div>
+</main>  <script>
     let recognition;
     let startTime;
     let timerInterval;
@@ -73,14 +82,35 @@
       }
       archive.slice().reverse().forEach((item, index) => {
         const li = document.createElement("li");
-        li.className = "cursor-pointer hover:text-yellow-400";
-        li.textContent = `📄 تسجيل ${index + 1}: ${item.text.slice(0, 20)}...`;
+        li.className = "cursor-pointer bg-gray-700 p-2 rounded shadow";
+        li.innerHTML = `📄 <span class='font-semibold'>${item.text.slice(0, 20)}...</span><br>
+          <div class='mt-1 space-x-2'>
+            <button onclick='shareAsPDF(${archive.length - 1 - index})' class='bg-blue-600 hover:bg-blue-500 px-2 py-1 text-sm rounded'>📤 مشاركة</button>
+            <button onclick='deleteItem(${archive.length - 1 - index})' class='bg-red-600 hover:bg-red-500 px-2 py-1 text-sm rounded'>🗑️ حذف</button>
+          </div>`;
         li.onclick = () => {
           document.getElementById("output").innerText = item.text;
           closeSidebar();
         };
         list.appendChild(li);
       });
+    }
+
+    function shareAsPDF(index) {
+      const text = archive[index].text;
+      const blob = new Blob([text], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `تسجيل.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function deleteItem(index) {
+      archive.splice(index, 1);
+      localStorage.setItem("transcripts", JSON.stringify(archive));
+      updateArchiveList();
     }
 
     function startRecording() {
