@@ -10,7 +10,7 @@
   <header class="bg-gray-800 px-4 py-3 flex items-center justify-between shadow">
     <button onclick="toggleSidebar()" class="text-2xl">☰</button>
     <h1 class="text-xl font-bold">محوّل الصوت إلى نص</h1>
-  </header>  <!-- القائمة الجانبية -->  <aside id="sidebar" class="fixed top-0 right-0 w-64 h-full bg-gray-800 shadow-lg transform transition-transform duration-300 translate-x-full z-50">
+  </header>  <!-- خلفية شفافة عند فتح الشريط الجانبي -->  <div id="backdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black bg-opacity-30 z-40"></div>  <!-- القائمة الجانبية -->  <aside id="sidebar" class="fixed top-0 right-0 w-64 h-full bg-gray-800 shadow-lg transform transition-transform duration-300 translate-x-full z-50">
     <div class="p-4">
       <h2 class="text-lg font-semibold mb-4">📁 الأرشيف</h2>
       <ul id="archiveList" class="space-y-2 max-h-[80vh] overflow-y-auto">
@@ -38,15 +38,27 @@
     };
 
     function toggleSidebar() {
-  const sidebar = document.getElementById("sidebar");
-  if (sidebar.classList.contains("translate-x-full")) {
-    sidebar.classList.remove("translate-x-full");
-    sidebar.classList.add("translate-x-0");
-  } else {
-    sidebar.classList.add("translate-x-full");
-    sidebar.classList.remove("translate-x-0");
-  }
-}
+      const sidebar = document.getElementById("sidebar");
+      const backdrop = document.getElementById("backdrop");
+
+      if (sidebar.classList.contains("translate-x-full")) {
+        sidebar.classList.remove("translate-x-full");
+        sidebar.classList.add("translate-x-0");
+        backdrop.classList.remove("hidden");
+      } else {
+        sidebar.classList.add("translate-x-full");
+        sidebar.classList.remove("translate-x-0");
+        backdrop.classList.add("hidden");
+      }
+    }
+
+    function closeSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const backdrop = document.getElementById("backdrop");
+      sidebar.classList.add("translate-x-full");
+      sidebar.classList.remove("translate-x-0");
+      backdrop.classList.add("hidden");
+    }
 
     function updateArchiveList() {
       const list = document.getElementById("archiveList");
@@ -61,6 +73,7 @@
         li.textContent = `📄 تسجيل ${index + 1}: ${item.text.slice(0, 20)}...`;
         li.onclick = () => {
           document.getElementById("output").innerText = item.text;
+          closeSidebar();
         };
         list.appendChild(li);
       });
