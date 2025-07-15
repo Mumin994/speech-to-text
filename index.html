@@ -33,11 +33,7 @@
   <button onclick="stopRecording()" class="px-6 py-2 rounded bg-red-700 hover:bg-red-600">⏹️ إيقاف</button>
 </div>
 
-  <div class="mt-8 text-center">
-  <button onclick="shareSite()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">
-    📲 شارك الموقع على واتساب
-  </button>
-</div>
+  <div class="mt-8 text-center"></div>
 <div class="mt-8 text-center">
   <h3 class="mb-2 text-sm text-gray-400">شارك الموقع على:</h3>
   <div class="a2a_kit a2a_default_style a2a_floating_style a2a_vertical_style">
@@ -107,11 +103,11 @@
 
     function shareAsPDF(index) {
       const text = archive[index].text;
-      const blob = new Blob([text], { type: "application/pdf" });
+      const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `تسجيل.pdf`;
+      link.download = `تسجيل.txt`;
       link.click();
       URL.revokeObjectURL(url);
     }
@@ -158,6 +154,7 @@
         recognition.stop();
         isPaused = true;
         clearInterval(timerInterval);
+document.getElementById("timer").innerText = "المدة: 0 ثانية";
       }
     }
 
