@@ -1,142 +1,53 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تحويل الصوت إلى نص</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
-      font-size: 20px;
-    }
-
-    .menu-button {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 30px;
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-
-    .sidebar {
-      position: fixed;
-      top: 0;
-      right: -250px;
-      width: 250px;
-      height: 100%;
-      background-color: #fff;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-      transition: right 0.3s ease;
-      padding: 20px;
-      text-align: right;
-      font-size: 18px;
-      z-index: 10;
-    }
-
-    .sidebar.open {
-      right: 0;
-    }
-
-    .mic-button {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #ff4b4b;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 70px;
-      height: 70px;
-      font-size: 30px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    .stop-button {
-      position: fixed;
-      bottom: 120px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #555;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    #output {
-      margin-top: 50px;
-      padding: 20px;
-      font-size: 22px;
-      background: white;
-      width: 80%;
-      margin-left: auto;
-      margin-right: auto;
-      min-height: 150px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      direction: rtl;
-      line-height: 1.6;
-    }
-
-    #timer {
-      margin-top: 15px;
-      font-size: 20px;
-      color: #333;
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-white font-sans">
+  <!-- شريط علوي -->
+  <header class="bg-gray-800 px-4 py-3 flex items-center justify-between shadow">
+    <button onclick="toggleSidebar()" class="text-2xl">☰</button>
+    <h1 class="text-xl font-bold">محوّل الصوت إلى نص</h1>
+  </header>  <!-- القائمة الجانبية -->  <aside id="sidebar" class="fixed top-0 right-0 w-64 h-full bg-gray-800 shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+    <div class="p-4">
+      <h2 class="text-lg font-semibold mb-4">القائمة</h2>
+      <ul class="space-y-2">
+        <li><a href="#" onclick="showArchive()" class="block hover:text-yellow-400">🗂️ الأرشيف</a></li>
+        <li><a href="#" class="block hover:text-yellow-400">⚙️ الإعدادات</a></li>
+        <li><a href="#" class="block hover:text-yellow-400">ℹ️ حول</a></li>
+      </ul>
+    </div>
+  </aside>  <!-- المحتوى الرئيسي -->  <main class="max-w-3xl mx-auto px-4 py-6">
+    <div class="mb-6">
+      <h2 class="text-2xl font-semibold mb-4">ابدأ التسجيل</h2>
+      <div id="output" class="bg-gray-800 p-4 rounded shadow min-h-[150px] text-lg">سيظهر النص هنا...</div>
+      <div id="timer" class="mt-2 text-yellow-400">المدة: 0 ثانية</div>
+    </div><div class="flex flex-col items-center space-y-4">
+  <button onclick="startRecording()" class="w-16 h-16 rounded-full bg-red-600 text-3xl shadow hover:bg-red-500">🎤</button>
+  <button onclick="stopRecording()" class="px-6 py-2 rounded bg-gray-700 hover:bg-gray-600">⏹️ إيقاف</button>
+</div>
 
-  <button class="menu-button" onclick="toggleSidebar()">☰</button>
-
-  <div id="sidebar" class="sidebar">
-    <h3>القائمة</h3>
-    <ul>
-      <li><a href="#" onclick="showArchive()">🗂️ الأرشيف</a></li>
-      <li><a href="#">⚙️ الإعدادات</a></li>
-      <li><a href="#">ℹ️ حول</a></li>
-    </ul>
-  </div>
-
-  <h2 style="margin-top: 100px; font-size: 28px;">مرحبًا بك في أداة تحويل الصوت إلى نص</h2>
-  <div id="output">سيظهر النص هنا...</div>
-  <div id="timer">المدة: 0 ثانية</div>
-
-  <button class="mic-button" onclick="startRecording()">🎤</button>
-  <button class="stop-button" onclick="stopRecording()">⏹️ إيقاف</button>
-
-  <script>
+  </main>  <script>
     let recognition;
     let startTime;
     let timerInterval;
 
-    // عند تحميل الصفحة، عرض النص المحفوظ سابقًا
     window.onload = function () {
       const saved = localStorage.getItem("lastTranscript");
-      if (saved) {
-        document.getElementById("output").innerText = saved;
-      }
+      if (saved) document.getElementById("output").innerText = saved;
     };
 
     function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("open");
+      const sidebar = document.getElementById("sidebar");
+      sidebar.classList.toggle("translate-x-full");
     }
 
     function showArchive() {
       const saved = localStorage.getItem("lastTranscript");
-      if (saved) {
-        alert("🗂️ آخر نص محفوظ:\n\n" + saved);
-      } else {
-        alert("لا يوجد نص محفوظ بعد.");
-      }
+      if (saved) alert("🗂️ آخر نص محفوظ:\n\n" + saved);
+      else alert("لا يوجد نص محفوظ بعد.");
     }
 
     function startRecording() {
@@ -155,7 +66,7 @@
         document.getElementById("output").innerText += transcript + " ";
       };
 
-      recognition.onerror = function (event) {
+      recognition.onerror = function () {
         alert("حدث خطأ أثناء التسجيل");
       };
 
@@ -174,13 +85,8 @@
         clearInterval(timerInterval);
       }
 
-      // حفظ النص في التخزين المحلي
       const finalText = document.getElementById("output").innerText.trim();
-      if (finalText) {
-        localStorage.setItem("lastTranscript", finalText);
-      }
+      if (finalText) localStorage.setItem("lastTranscript", finalText);
     }
-  </script>
-
-</body>
+  </script></body>
 </html>
