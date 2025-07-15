@@ -71,7 +71,7 @@
         list.innerHTML = '<li class="text-gray-400">لا يوجد محفوظات بعد.</li>';
         return;
       }
-      archive.forEach((item, index) => {
+      archive.slice().reverse().forEach((item, index) => {
         const li = document.createElement("li");
         li.className = "cursor-pointer hover:text-yellow-400";
         li.textContent = `📄 تسجيل ${index + 1}: ${item.text.slice(0, 20)}...`;
