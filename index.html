@@ -20,17 +20,21 @@
   </aside>  <!-- المحتوى الرئيسي -->  <main class="max-w-3xl mx-auto px-4 py-6">
     <div class="mb-6">
       <h2 class="text-2xl font-semibold mb-4">ابدأ التسجيل</h2>
-      <div id="output" class="bg-gray-800 p-4 rounded shadow min-h-[150px] text-lg">سيظهر النص هنا...</div>
+      <div id="output" class="bg-gray-800 p-4 rounded shadow min-h-[150px] text-lg"></div>
       <div id="timer" class="mt-2 text-yellow-400">المدة: 0 ثانية</div>
-    </div><div class="flex flex-col items-center space-y-4">
-  <button onclick="startRecording()" class="w-16 h-16 rounded-full bg-red-600 text-3xl shadow hover:bg-red-500">🎤</button>
-  <button onclick="stopRecording()" class="px-6 py-2 rounded bg-gray-700 hover:bg-gray-600">⏹️ إيقاف</button>
+    </div><div class="flex flex-wrap justify-center gap-4 mt-6">
+  <button onclick="startRecording()" class="px-6 py-2 rounded bg-green-600 hover:bg-green-500">🎤 بدء</button>
+  <button onclick="pauseRecording()" class="px-6 py-2 rounded bg-yellow-600 hover:bg-yellow-500">⏸️ إيقاف مؤقت</button>
+  <button onclick="resumeRecording()" class="px-6 py-2 rounded bg-blue-600 hover:bg-blue-500">▶️ استئناف</button>
+  <button onclick="stopRecording()" class="px-6 py-2 rounded bg-red-700 hover:bg-red-600">⏹️ إيقاف</button>
 </div>
 
   </main>  <script>
     let recognition;
     let startTime;
     let timerInterval;
+    let isPaused = false;
+    let recordedText = "";
     let archive = JSON.parse(localStorage.getItem("transcripts")) || [];
 
     window.onload = function () {
@@ -92,7 +96,8 @@
 
       recognition.onresult = function (event) {
         const transcript = event.results[event.results.length - 1][0].transcript;
-        document.getElementById("output").innerText += transcript + " ";
+        recordedText += transcript + " ";
+        document.getElementById("output").innerText = recordedText;
       };
 
       recognition.onerror = function () {
@@ -100,6 +105,44 @@
       };
 
       recognition.start();
+      isPaused = false;
+
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById("timer").innerText = `المدة: ${seconds} ثانية`;
+      }, 1000);
+    }
+
+    function pauseRecording() {
+      if (recognition) {
+        recognition.stop();
+        isPaused = true;
+        clearInterval(timerInterval);
+      }
+    }
+
+    function resumeRecording() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("متصفحك لا يدعم ميزة التعرف على الصوت");
+        return;
+      }
+
+      if (!isPaused) return;
+
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "ar-SA";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[event.results.length - 1][0].transcript;
+        recordedText += transcript + " ";
+        document.getElementById("output").innerText = recordedText;
+      };
+
+      recognition.start();
+      isPaused = false;
 
       startTime = Date.now();
       timerInterval = setInterval(() => {
@@ -114,12 +157,15 @@
         clearInterval(timerInterval);
       }
 
-      const finalText = document.getElementById("output").innerText.trim();
+      const finalText = recordedText.trim();
       if (finalText) {
         archive.push({ text: finalText, time: new Date().toISOString() });
         localStorage.setItem("transcripts", JSON.stringify(archive));
         updateArchiveList();
       }
+
+      recordedText = "";
+      document.getElementById("output").innerText = "";
     }
   </script></body>
 </html>
