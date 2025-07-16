@@ -1,4 +1,4 @@
-<!DOCTYPE html
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -96,16 +96,18 @@
         let interimTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
+          const transcript = event.results[i][0].transcript.trim();
+
+          // ✅ فلترة التكرار
+          if (!collectedTranscript.trim().endsWith(transcript)) {
             collectedTranscript += transcript + " ";
           } else {
-            interimTranscript += transcript;
+            console.log("تم تجاهل تكرار:", transcript);
           }
         }
 
         finalTranscript = collectedTranscript.trim();
-        transcriptEl.value = collectedTranscript + interimTranscript;
+        transcriptEl.value = finalTranscript + interimTranscript;
       };
 
       recognition.onerror = (event) => {
