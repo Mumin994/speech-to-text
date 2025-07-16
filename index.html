@@ -1,94 +1,114 @@
-<script>
-  let recognition;
-  let isRecording = false;
-  let finalTranscript = '';
-  let lastPhrase = '';
-  let timerInterval;
-  let seconds = 0;
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>محول الصوت إلى نص</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">🎤 محول الصوت إلى نص</h1><div class="text-sm mb-2"> المدة: <span id="timer">0</span> ثانية </div>
 
-  function startTimer() {
-    seconds = 0;
-    document.getElementById('timer').innerText = seconds;
-    timerInterval = setInterval(() => {
-      seconds++;
+<div class="flex flex-wrap gap-2 mb-4">
+  <button onclick="startRecording()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">ابدأ التسجيل</button>
+  <button onclick="pauseRecording()" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded">إيقاف مؤقت</button>
+  <button onclick="resumeRecording()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">استئناف</button>
+  <button onclick="stopRecording()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">إيقاف</button>
+</div>
+
+<textarea id="output" class="w-full h-40 p-2 text-black rounded mb-6" placeholder="سيظهر النص هنا..."></textarea>
+
+<h2 class="text-xl font-semibold mb-2">📂 الأرشيف:</h2>
+<div id="archive" class="space-y-2"></div>
+
+  </div>  <script>
+    let recognition;
+    let isRecording = false;
+    let finalTranscript = '';
+    let lastTranscript = '';
+    let timerInterval;
+    let seconds = 0;
+
+    function startTimer() {
+      seconds = 0;
       document.getElementById('timer').innerText = seconds;
-    }, 1000);
-  }
-
-  function stopTimer() {
-    clearInterval(timerInterval);
-  }
-
-  function startRecording() {
-    if (!('webkitSpeechRecognition' in window)) {
-      alert('متصفحك لا يدعم تحويل الصوت إلى نص');
-      return;
+      timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').innerText = seconds;
+      }, 1000);
     }
 
-    recognition = new webkitSpeechRecognition();
-    recognition.lang = 'ar-SA';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
 
-    recognition.onresult = function (event) {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        let transcript = event.results[i][0].transcript.trim();
-        if (!event.results[i].isFinal) {
-          interimTranscript += transcript + ' ';
-        } else {
-          // فلترة التكرار الدقيقة:
-          if (!lastPhrase || transcript !== lastPhrase) {
-            finalTranscript += transcript + ' ';
-            lastPhrase = transcript;
+    function startRecording() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert('متصفحك لا يدعم تحويل الصوت إلى نص');
+        return;
+      }
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'ar-SA';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = function (event) {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          let transcript = event.results[i][0].transcript.trim();
+          if (!event.results[i].isFinal) {
+            interimTranscript += transcript + ' ';
+          } else {
+            if (!finalTranscript.endsWith(transcript)) {
+              finalTranscript += transcript + ' ';
+            }
           }
         }
+        document.getElementById('output').value = finalTranscript + interimTranscript;
+      };
+
+      recognition.onerror = function (event) {
+        console.error('خطأ:', event);
+      };
+
+      recognition.start();
+      isRecording = true;
+      startTimer();
+    }
+
+    function pauseRecording() {
+      if (recognition && isRecording) {
+        recognition.stop();
+        isRecording = false;
+        stopTimer();
       }
-      document.getElementById('output').value = finalTranscript + interimTranscript;
-    };
-
-    recognition.onerror = function (event) {
-      console.error('حدث خطأ:', event);
-    };
-
-    recognition.start();
-    isRecording = true;
-    startTimer();
-  }
-
-  function pauseRecording() {
-    if (recognition && isRecording) {
-      recognition.stop();
-      isRecording = false;
-      stopTimer();
     }
-  }
 
-  function resumeRecording() {
-    if (!isRecording) {
-      startRecording();
+    function resumeRecording() {
+      if (!isRecording) {
+        startRecording();
+      }
     }
-  }
 
-  function stopRecording() {
-    if (recognition) {
-      recognition.stop();
-      isRecording = false;
-      stopTimer();
-      saveToArchive(finalTranscript.trim());
-      finalTranscript = '';
-      lastPhrase = '';
-      document.getElementById('output').value = '';
+    function stopRecording() {
+      if (recognition) {
+        recognition.stop();
+        isRecording = false;
+        stopTimer();
+        saveToArchive(finalTranscript.trim());
+        finalTranscript = '';
+        document.getElementById('output').value = '';
+      }
     }
-  }
 
-  function saveToArchive(text) {
-    if (!text) return;
-    const archive = document.getElementById('archive');
-    const item = document.createElement('div');
-    item.className = 'archive-item';
-    const id = archive.children.length + 1;
-    item.innerHTML = `${text} <br><small>#${id}</small>`;
-    archive.prepend(item);
-  }
-</script>
+    function saveToArchive(text) {
+      if (!text) return;
+      const archive = document.getElementById('archive');
+      const item = document.createElement('div');
+      item.className = 'bg-gray-800 p-2 rounded';
+      const id = archive.children.length + 1;
+      item.innerHTML = `<div>${text}</div><div class='text-xs text-gray-400 mt-1'>#${id}</div>`;
+      archive.prepend(item);
+    }
+  </script></body>
+</html>
