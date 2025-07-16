@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مُحوّل الصوت إلى نص</title>
+  <title>محوّل الصوت إلى نص</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen p-4 flex flex-col items-center">
 
-  <!-- 🧠 واجهة مشابهة لمترجم غوغل -->
+  <!-- 🎤 واجهة رئيسية -->
   <div class="w-full max-w-3xl bg-gray-800 rounded-lg p-4 space-y-4 shadow-lg">
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-bold">🎤 مُحوّل الصوت إلى نص</h1>
@@ -32,11 +32,12 @@
     </div>
   </div>
 
-  <!-- 📁 الأرشيف -->
+  <!-- 🗂️ الأرشيف -->
   <div class="w-full max-w-3xl mt-6 space-y-2" id="archive"></div>
 
   <script>
     let recognition;
+    let collectedTranscript = "";
     let finalTranscript = "";
     let timer;
     let seconds = 0;
@@ -82,7 +83,7 @@
     function setupSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("المتصفح لا يدعم التعرف على الصوت بالعربية. استخدم Google Chrome أو Edge.");
+        alert("المتصفح لا يدعم التعرف على الصوت. يُرجى استخدام Google Chrome أو Edge.");
         return;
       }
 
@@ -92,27 +93,28 @@
       recognition.interimResults = true;
 
       recognition.onresult = (event) => {
-        finalTranscript = "";
         let interimTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + " ";
+            collectedTranscript += transcript + " ";
           } else {
             interimTranscript += transcript;
           }
         }
 
-        transcriptEl.value = finalTranscript + interimTranscript;
+        finalTranscript = collectedTranscript.trim();
+        transcriptEl.value = collectedTranscript + interimTranscript;
       };
 
       recognition.onerror = (event) => {
-        console.error("خطأ:", event.error);
+        console.error("حدث خطأ في التعرف على الصوت:", event.error);
       };
     }
 
     document.getElementById("startBtn").addEventListener("click", () => {
+      collectedTranscript = "";
       finalTranscript = "";
       transcriptEl.value = "";
       seconds = 0;
@@ -145,7 +147,7 @@
         if (finalText) {
           transcriptEl.value = finalText;
           saveToArchive(finalText);
-          finalTranscript = "";
+          collectedTranscript = "";
         }
       }
     });
@@ -160,7 +162,7 @@
     };
 
     window.downloadText = function(index) {
-      const blob = new Blob([records[index]], { type: "text/plain;charset=utf-8" });
+      const blob = new Blob([`\uFEFF${records[index]}`], { type: "text/plain;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = `تسجيل_${index + 1}.txt`;
