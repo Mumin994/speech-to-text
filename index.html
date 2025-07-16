@@ -1,171 +1,163 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>محول الصوت إلى نص</title>
+    <title>مُحوّل الصوت إلى نص</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/addtoany@1.1/addtoany.min.js" defer></script>
     <style>
       body { font-family: system-ui, sans-serif; }
+      .container-shadow {
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      }
     </style>
   </head>
-  <body class="bg-gray-900 text-white min-h-screen flex flex-col">
-    <!-- 🔝 الشريط العلوي -->
-    <header class="p-4 flex justify-between items-center bg-gray-800">
-      <h1 class="text-xl font-bold">🎤 محول الصوت إلى نص</h1>
-      <button id="drawerBtn" class="text-2xl">☰</button>
-    </header>
+  <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-4">
+    <!-- 🧠 الواجهة المشابهة لمترجم غوغل -->
+    <div class="w-full max-w-3xl bg-gray-800 rounded-lg container-shadow p-4 space-y-4">
+      <!-- شريط علوي -->
+      <div class="flex justify-between items-center">
+        <h1 class="text-xl font-bold">🎤 مُحوّل الصوت إلى نص</h1>
+        <div class="text-sm text-gray-400" id="timer">المدة: 0 ثانية</div>
+      </div><!-- صندوق النص -->
+  <textarea id="transcript" rows="8" class="w-full bg-gray-900 text-white p-3 rounded-lg resize-none border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="سيظهر النص هنا..."></textarea>
 
-    <!-- 📋 الشريط الجانبي -->
-    <aside id="drawer" class="fixed top-0 right-0 bg-gray-800 h-full w-64 p-4 transform translate-x-full transition-transform duration-300 z-50">
-      <h2 class="text-lg font-bold mb-2">📋 قائمة</h2>
-      <p class="text-sm">هذا شريط جانبي تجريبي للزينة فقط.</p>
-    </aside>
-    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
+  <!-- أزرار التحكم -->
+  <div class="flex flex-wrap gap-3 justify-start">
+    <button id="startBtn" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">🎙️ بدء التسجيل</button>
+    <button id="pauseBtn" class="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700">⏸️ إيقاف مؤقت</button>
+    <button id="resumeBtn" class="bg-green-600 px-4 py-2 rounded hover:bg-green-700">▶️ استئناف</button>
+    <button id="stopBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">⏹️ إيقاف</button>
+  </div>
+</div>
 
-    <!-- 🧠 المحتوى الرئيسي -->
-    <main class="flex-1 p-4 space-y-4">
-      <div class="text-sm text-gray-400" id="timer">المدة: 0 ثانية</div>
-      <div class="flex gap-4">
-        <button id="startBtn" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">ابدأ التسجيل</button>
-        <button id="stopBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">إيقاف التسجيل</button>
-      </div>
-      <section id="archive" class="mt-6 space-y-2"></section>
-    </main>
+<!-- 🗂️ الأرشيف -->
+<div class="w-full max-w-3xl mt-6 space-y-2" id="archive"></div>
 
-    <!-- 📢 زر المشاركة -->
-    <footer class="p-4 bg-gray-800 text-center mt-auto">
-      <div class="a2a_kit a2a_kit_size_32 a2a_default_style flex justify-center gap-3">
-        <a class="a2a_button_whatsapp"></a>
-        <a class="a2a_button_facebook"></a>
-        <a class="a2a_button_twitter"></a>
-        <a class="a2a_button_telegram"></a>
-      </div>
-    </footer>
+<!-- 🧾 السكربت -->
+<script>
+  let mediaRecorder;
+  let chunks = [];
+  let isPaused = false;
+  let timer;
+  let seconds = 0;
+  const timerEl = document.getElementById("timer");
+  const transcriptEl = document.getElementById("transcript");
+  const archiveEl = document.getElementById("archive");
+  let records = JSON.parse(localStorage.getItem("records") || "[]");
 
-    <!-- 🎯 البرمجة -->
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const startBtn = document.getElementById("startBtn");
-        const stopBtn = document.getElementById("stopBtn");
-        const timerEl = document.getElementById("timer");
-        const archive = document.getElementById("archive");
-        const drawerBtn = document.getElementById("drawerBtn");
-        const drawer = document.getElementById("drawer");
-        const overlay = document.getElementById("overlay");
+  function startTimer() {
+    timer = setInterval(() => {
+      seconds++;
+      timerEl.textContent = `المدة: ${seconds} ثانية`;
+    }, 1000);
+  }
 
-        let mediaRecorder;
-        let chunks = [];
-        let timer;
-        let seconds = 0;
+  function stopTimer() {
+    clearInterval(timer);
+  }
 
-        // ⏱️ العداد
-        const startTimer = () => {
-          timer = setInterval(() => {
-            seconds++;
-            timerEl.textContent = `المدة: ${seconds} ثانية`;
-          }, 1000);
-        };
-        const stopTimer = () => clearInterval(timer);
+  function renderArchive() {
+    archiveEl.innerHTML = "";
+    records.forEach((item, index) => {
+      const i = records.length - index;
+      const div = document.createElement("div");
+      div.className = "bg-gray-800 p-3 rounded-lg flex justify-between items-center gap-2";
+      div.innerHTML = `
+        <span class="flex-1 cursor-pointer hover:underline" onclick="editText(${index})">${item}</span>
+        <div class="flex items-center gap-2">
+          <button onclick="downloadText(${index})" class="text-green-400">📥</button>
+          <button onclick="deleteText(${index})" class="text-red-400">🗑️</button>
+          <span class="text-xs text-gray-400">${i}</span>
+        </div>
+      `;
+      archiveEl.appendChild(div);
+    });
+  }
 
-        // 📁 تحميل الأرشيف
-        let saved = JSON.parse(localStorage.getItem("records") || "[]");
-        let counter = saved.length;
-        renderArchive();
+  function saveToArchive(text) {
+    records.unshift(text);
+    localStorage.setItem("records", JSON.stringify(records));
+    renderArchive();
+  }
 
-        // ▶️ بدء التسجيل
-        startBtn.addEventListener("click", async () => {
-          chunks = [];
-          seconds = 0;
-          timerEl.textContent = "المدة: 0 ثانية";
+  document.getElementById("startBtn").addEventListener("click", async () => {
+    chunks = [];
+    seconds = 0;
+    timerEl.textContent = "المدة: 0 ثانية";
+    transcriptEl.value = "";
 
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
 
-          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-          mediaRecorder.onstop = () => {
-            stopTimer();
-            const blob = new Blob(chunks, { type: "audio/webm" });
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const transcript = prompt("اكتب النص المستنتج أو عدّله:", "");
-              if (transcript) {
-                saved.unshift({ text: transcript });
-                localStorage.setItem("records", JSON.stringify(saved));
-                renderArchive();
-              }
-            };
-            reader.readAsDataURL(blob);
-          };
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
 
-          mediaRecorder.start();
-          startTimer();
-        });
-
-        // ⛔ إيقاف التسجيل
-        stopBtn.addEventListener("click", () => {
-          if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-          }
-        });
-
-        // 📜 عرض الأرشيف
-        function renderArchive() {
-          archive.innerHTML = "";
-          saved.forEach((item, index) => {
-            const i = saved.length - index;
-            const div = document.createElement("div");
-            div.className = "p-2 border-b border-gray-700 flex justify-between items-center gap-2";
-            div.innerHTML = `
-              <span class="text-sm flex-1 cursor-pointer hover:underline" onclick="editText(${index})">${item.text}</span>
-              <div class="flex items-center gap-2">
-                <button onclick="downloadText(${index})" class="text-green-400">📥</button>
-                <button onclick="deleteText(${index})" class="text-red-400">🗑️</button>
-                <span class="text-gray-500 text-xs">${i}</span>
-              </div>`;
-            archive.appendChild(div);
-          });
+    mediaRecorder.onstop = () => {
+      stopTimer();
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = prompt("حرّر النص المستنتج:", transcriptEl.value);
+        if (result !== null) {
+          transcriptEl.value = result;
+          saveToArchive(result);
         }
+      };
+      reader.readAsDataURL(blob);
+    };
 
-        // ☰ القائمة الجانبية
-        drawerBtn.addEventListener("click", () => {
-          drawer.classList.remove("translate-x-full");
-          overlay.classList.remove("hidden");
-        });
-        overlay.addEventListener("click", () => {
-          drawer.classList.add("translate-x-full");
-          overlay.classList.add("hidden");
-        });
+    mediaRecorder.start();
+    startTimer();
+  });
 
-        // ✏️ تعديل نص
-        window.editText = function (index) {
-          const newText = prompt("عدّل النص:", saved[index].text);
-          if (newText !== null) {
-            saved[index].text = newText;
-            localStorage.setItem("records", JSON.stringify(saved));
-            renderArchive();
-          }
-        };
+  document.getElementById("pauseBtn").addEventListener("click", () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.pause();
+      isPaused = true;
+      stopTimer();
+    }
+  });
 
-        // 📥 تحميل نص
-        window.downloadText = function (index) {
-          const blob = new Blob([saved[index].text], { type: "text/plain;charset=utf-8" });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `تسجيل_${index + 1}.txt`;
-          a.click();
-        };
+  document.getElementById("resumeBtn").addEventListener("click", () => {
+    if (mediaRecorder && mediaRecorder.state === "paused") {
+      mediaRecorder.resume();
+      isPaused = false;
+      startTimer();
+    }
+  });
 
-        // 🗑️ حذف
-        window.deleteText = function (index) {
-          if (confirm("هل أنت متأكد من حذف هذا التسجيل؟")) {
-            saved.splice(index, 1);
-            localStorage.setItem("records", JSON.stringify(saved));
-            renderArchive();
-          }
-        };
-      });
-    </script>
+  document.getElementById("stopBtn").addEventListener("click", () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+  });
+
+  window.editText = function(index) {
+    const newText = prompt("عدّل النص:", records[index]);
+    if (newText !== null) {
+      records[index] = newText;
+      localStorage.setItem("records", JSON.stringify(records));
+      renderArchive();
+    }
+  }
+
+  window.downloadText = function(index) {
+    const blob = new Blob([records[index]], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `تسجيل_${index + 1}.txt`;
+    a.click();
+  }
+
+  window.deleteText = function(index) {
+    if (confirm("هل تريد حذف هذا التسجيل؟")) {
+      records.splice(index, 1);
+      localStorage.setItem("records", JSON.stringify(records));
+      renderArchive();
+    }
+  }
+
+  renderArchive();
+</script>
+
   </body>
 </html>
