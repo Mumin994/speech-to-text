@@ -11,33 +11,26 @@
       }
     </style>
   </head>
-  <body class="bg-gray-900 
- min-h-screen flex flex-col items-center p-4">
-    <!-- 🧠 الواجهة المشابهة لمترجم غوغل -->
+  <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-4">
+    <!-- 🧠 واجهة مستوحاة من Google Translate -->
     <div class="w-full max-w-3xl bg-gray-800 rounded-lg container-shadow p-4 space-y-4">
-      <!-- شريط علوي -->
       <div class="flex justify-between items-center">
         <h1 class="text-xl font-bold">🎤 مُحوّل الصوت إلى نص</h1>
         <div class="text-sm text-gray-400" id="timer">المدة: 0 ثانية</div>
-      </div><!-- صندوق النص -->
-  <textarea id="transcript" rows="8" class="w-full bg-gray-900 text-white p-3 rounded-lg resize-none border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="سيظهر النص هنا..."></textarea>
-
-  <!-- أزرار التحكم -->
-  <div class="flex flex-wrap gap-3 justify-start">
-    <button id="startBtn" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">🎙️ بدء التسجيل</button>
-    <button id="pauseBtn" class="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700">⏸️ إيقاف مؤقت</button>
-    <button id="resumeBtn" class="bg-green-600 px-4 py-2 rounded hover:bg-green-700">▶️ استئناف</button>
-    <button id="stopBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">⏹️ إيقاف</button>
-  </div>
-</div>
-
-<!-- 🗂️ الأرشيف -->
+      </div>
+      <textarea id="transcript" rows="8" class="w-full bg-gray-900 text-white p-3 rounded-lg resize-none border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="سيظهر النص مباشرة هنا..."></textarea>
+      <div class="flex flex-wrap gap-3 justify-start">
+        <button id="startBtn" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">🎙️ بدء التسجيل</button>
+        <button id="pauseBtn" class="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700">⏸️ إيقاف مؤقت</button>
+        <button id="resumeBtn" class="bg-green-600 px-4 py-2 rounded hover:bg-green-700">▶️ استئناف</button>
+        <button id="stopBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700">⏹️ إيقاف</button>
+      </div>
+    </div><!-- 🗂️ الأرشيف -->
 <div class="w-full max-w-3xl mt-6 space-y-2" id="archive"></div>
 
-<!-- 🧾 السكربت -->
 <script>
   let mediaRecorder;
-  let chunks = [];
+  let recognition;
   let isPaused = false;
   let timer;
   let seconds = 0;
@@ -81,54 +74,64 @@
     renderArchive();
   }
 
-  document.getElementById("startBtn").addEventListener("click", async () => {
-    chunks = [];
-    seconds = 0;
-    timerEl.textContent = "المدة: 0 ثانية";
-    transcriptEl.value = "";
+  function setupSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("المتصفح لا يدعم التعرف على الصوت بالعربية. استخدم كروم أو إيدج.");
+      return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = "ar-SA";
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-
-    mediaRecorder.onstop = () => {
-      stopTimer();
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = prompt("حرّر النص المستنتج:", transcriptEl.value);
-        if (result !== null) {
-          transcriptEl.value = result;
-          saveToArchive(result);
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          transcriptEl.value += transcript + " ";
+        } else {
+          interimTranscript += transcript;
         }
-      };
-      reader.readAsDataURL(blob);
+      }
     };
 
-    mediaRecorder.start();
+    recognition.onerror = (event) => {
+      console.error("خطأ في التعرف على الصوت:", event.error);
+    };
+  }
+
+  document.getElementById("startBtn").addEventListener("click", () => {
+    transcriptEl.value = "";
+    seconds = 0;
+    timerEl.textContent = "المدة: 0 ثانية";
+    setupSpeechRecognition();
+    recognition.start();
     startTimer();
   });
 
   document.getElementById("pauseBtn").addEventListener("click", () => {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.pause();
-      isPaused = true;
+    if (recognition) {
+      recognition.stop();
       stopTimer();
     }
   });
 
   document.getElementById("resumeBtn").addEventListener("click", () => {
-    if (mediaRecorder && mediaRecorder.state === "paused") {
-      mediaRecorder.resume();
-      isPaused = false;
+    if (recognition) {
+      setupSpeechRecognition();
+      recognition.start();
       startTimer();
     }
   });
 
   document.getElementById("stopBtn").addEventListener("click", () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
+    if (recognition) {
+      recognition.stop();
+      stopTimer();
+      const finalText = transcriptEl.value.trim();
+      if (finalText) saveToArchive(finalText);
     }
   });
 
